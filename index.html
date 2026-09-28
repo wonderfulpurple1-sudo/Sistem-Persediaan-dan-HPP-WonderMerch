@@ -1,0 +1,1438 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff9c4">
+  <title>Wonder Merch | Sistem Persediaan &amp; HPP</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #27323b;
+      --muted: #687681;
+      --line: #e8e8df;
+      --paper: #fffefa;
+      --canvas: #f6f8f6;
+      --yellow: #fff9c4;
+      --yellow-strong: #ffe082;
+      --blue: #bbdefb;
+      --blue-strong: #64b5f6;
+      --blue-deep: #23658f;
+      --green: #367c63;
+      --red: #b84a42;
+      --shadow: 0 12px 32px rgba(42, 61, 70, .07);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .shell { max-width: 1440px; min-height: 100vh; margin: auto; padding: 26px clamp(16px, 4vw, 56px) 48px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .brand-mark { position: relative; display: grid; width: 46px; height: 46px; flex: 0 0 auto; place-items: center; border: 1px solid #c8e1f4; border-radius: 15px; background: #eaf5fd; color: #23658f; font-family: Georgia, serif; font-size: 25px; font-weight: 700; }
+    .brand-mark::after { position: absolute; top: 3px; right: 3px; color: #d59a20; content: "✿"; font-family: "Segoe UI Symbol", sans-serif; font-size: 12px; line-height: 1; }
+    .brand-mark::before { position: absolute; right: 9px; bottom: 8px; left: 9px; height: 2px; border-radius: 2px; background: var(--yellow-strong); content: ""; }
+    .brand-name { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 21px; line-height: 1.15; }
+    .brand-wonder { color: #174d71; font-weight: 700; }
+    .brand-merch { color: #b18422; font-family: "Segoe UI", system-ui, sans-serif; font-size: 16px; font-weight: 600; }
+    .brand-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .today { color: var(--muted); font-size: 13px; text-align: right; }
+    .nav { display: flex; gap: 7px; overflow-x: auto; padding: 7px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); box-shadow: 0 5px 18px rgba(42, 61, 70, .035); scrollbar-width: thin; }
+    .nav button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; color: #5d6972; font-size: 13px; font-weight: 650; white-space: nowrap; transition: background .18s, color .18s; }
+    .nav button:hover { background: #f0f6fa; color: var(--blue-deep); }
+    .nav button[aria-current="page"] { background: var(--blue); color: #174d71; }
+    main { padding-top: 29px; }
+    .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 21px; }
+    .eyebrow { margin: 0 0 7px; color: var(--blue-deep); font-size: 11px; font-weight: 750; letter-spacing: 0; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(23px, 3vw, 31px); line-height: 1.16; }
+    .page-description { margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+    .button { display: inline-flex; min-height: 41px; align-items: center; justify-content: center; gap: 8px; padding: 0 15px; border: 1px solid transparent; border-radius: 9px; background: var(--blue-strong); color: #153c56; font-size: 13px; font-weight: 700; transition: transform .15s, box-shadow .15s, background .15s; }
+    .button:hover { transform: translateY(-1px); box-shadow: 0 6px 15px rgba(60, 136, 190, .2); }
+    .button.secondary { border-color: #dce6eb; background: white; color: #455660; }
+    .button.warm { background: var(--yellow-strong); color: #5e4a16; }
+    .button.danger { border-color: #f2d8d5; background: #fff8f7; color: var(--red); }
+    .button.small { min-height: 32px; padding: 0 10px; font-size: 12px; }
+    .metric-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 19px; }
+    .metric { position: relative; overflow: hidden; min-height: 142px; padding: 19px 20px; border: 1px solid var(--line); border-radius: 13px; background: var(--paper); box-shadow: var(--shadow); }
+    .metric::after { position: absolute; right: -15px; bottom: -26px; width: 95px; height: 95px; border-radius: 50%; background: var(--metric-glow, #eef7fc); content: ""; opacity: .85; }
+    .metric:nth-child(2) { --metric-glow: #fff3bf; }
+    .metric:nth-child(3) { --metric-glow: #e1f2e8; }
+    .metric:nth-child(4) { --metric-glow: #fce7d8; }
+    .metric:nth-child(5) { --metric-glow: #e9e4fa; }
+    .metric-label { position: relative; z-index: 1; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .metric-value { position: relative; z-index: 1; margin-top: 17px; font-size: clamp(23px, 3vw, 30px); font-weight: 750; letter-spacing: 0; line-height: 1.12; }
+    .metric-foot { position: relative; z-index: 1; margin-top: 8px; color: #7a858b; font-size: 11px; }
+    .dashboard-grid { display: grid; grid-template-columns: 1.25fr .75fr; gap: 16px; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: 13px; background: var(--paper); box-shadow: var(--shadow); }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 19px 14px; border-bottom: 1px solid #eeeee8; }
+    .panel-head h2 { margin: 0; font-size: 15px; }
+    .panel-head p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .panel-body { padding: 16px 19px 19px; }
+    .quick-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .quick-link { display: flex; min-height: 70px; align-items: center; gap: 11px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--ink); text-align: left; }
+    .quick-link:hover { border-color: #add3ed; background: #f5fbff; }
+    .quick-icon { display: grid; width: 35px; height: 35px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: var(--yellow); font-size: 17px; }
+    .quick-link:nth-child(2) .quick-icon, .quick-link:nth-child(3) .quick-icon { background: #e3f2fd; }
+    .quick-link strong { display: block; font-size: 12px; }
+    .quick-link small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .alert-list { display: grid; gap: 9px; }
+    .ranking-list { display: grid; gap: 13px; }
+    .ranking-item { display: grid; grid-template-columns: minmax(100px, .7fr) 1.3fr auto; align-items: center; gap: 12px; }
+    .ranking-label { overflow: hidden; font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .ranking-track { height: 9px; overflow: hidden; border-radius: 10px; background: #edf1ef; }
+    .ranking-bar { height: 100%; min-width: 2px; border-radius: inherit; background: linear-gradient(90deg, #90caf9, #ffe082); }
+    .ranking-bar.negative { background: #dc8b80; }
+    .ranking-value { color: var(--green); font-size: 11px; font-weight: 750; text-align: right; }
+    .alert-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 11px; border-radius: 9px; background: #fff9e9; }
+    .alert-name { overflow: hidden; font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .alert-sku { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .stock-count { flex: 0 0 auto; color: #8b6419; font-size: 12px; font-weight: 750; }
+    .empty-state { padding: 22px 10px; color: var(--muted); font-size: 12px; text-align: center; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+    th, td { padding: 13px 15px; border-bottom: 1px solid #eff0eb; text-align: left; }
+    th { background: #fafbf8; color: #6d7980; font-size: 10px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+    td { font-size: 12px; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #fcfdfb; }
+    .cell-main { font-weight: 700; }
+    .cell-sub { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .badge { display: inline-flex; align-items: center; min-height: 23px; padding: 0 8px; border-radius: 20px; background: #edf6fc; color: #326c91; font-size: 10px; font-weight: 700; }
+    .badge.low { background: #fff1d0; color: #88631b; }
+    .badge.good { background: #e7f4ea; color: #37754c; }
+    .actions { display: flex; justify-content: flex-end; gap: 6px; }
+    .table-tools { display: flex; align-items: center; gap: 9px; }
+    .search { width: min(240px, 36vw); min-height: 39px; padding: 0 12px; border: 1px solid #dfe5e5; border-radius: 9px; outline: none; background: white; font-size: 12px; }
+    .search:focus, input:focus, select:focus { border-color: var(--blue-strong); box-shadow: 0 0 0 3px rgba(100, 181, 246, .17); outline: none; }
+    .form-panel { max-width: 900px; margin-bottom: 18px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .field { display: grid; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { color: #4d5a61; font-size: 11px; font-weight: 700; }
+    .field input, .field select { width: 100%; min-height: 41px; padding: 0 11px; border: 1px solid #dfe5e5; border-radius: 8px; background: white; color: var(--ink); font-size: 12px; }
+    .field-hint { color: var(--muted); font-size: 10px; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .form-note { margin: 0 0 14px; padding: 10px 12px; border-left: 3px solid var(--blue-strong); border-radius: 4px; background: #f1f8fd; color: #4c687b; font-size: 11px; }
+    .attachment-link { color: var(--blue-deep); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+    .ledger-filters { display: flex; align-items: center; gap: 9px; }
+    .dialog { width: min(520px, calc(100% - 28px)); padding: 0; border: 0; border-radius: 14px; box-shadow: 0 22px 80px rgba(23, 42, 54, .24); }
+    .dialog::backdrop { background: rgba(36, 49, 58, .4); backdrop-filter: blur(2px); }
+    .dialog-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 19px 21px 15px; border-bottom: 1px solid var(--line); }
+    .dialog-head h2 { margin: 0; font-size: 17px; }
+    .dialog-head p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+    .dialog-body { padding: 18px 21px 21px; }
+    .icon-button { display: grid; width: 32px; height: 32px; place-items: center; border: 0; border-radius: 8px; background: #f0f3f3; color: #59666d; font-size: 18px; }
+    .toast { position: fixed; right: 22px; bottom: 22px; z-index: 5; max-width: min(390px, calc(100vw - 32px)); padding: 13px 16px; border: 1px solid #d7e8d9; border-radius: 10px; background: white; box-shadow: 0 12px 35px rgba(28, 46, 55, .18); font-size: 12px; animation: rise .2s ease-out; }
+    .toast.error { border-color: #f0d3d0; color: #9b3e36; }
+    .toast[hidden] { display: none; }
+    .config-banner { margin: 0 0 18px; padding: 12px 15px; border: 1px solid #f0dca4; border-radius: 10px; background: #fff9e7; color: #715a22; font-size: 12px; line-height: 1.5; }
+    .config-banner[hidden] { display: none; }
+    [hidden] { display: none !important; }
+    @keyframes rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 900px) {
+      .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .shell { padding: 16px 13px 30px; }
+      .topbar { align-items: flex-start; margin-bottom: 18px; }
+      .brand-mark { width: 40px; height: 40px; }
+      .brand-name { font-size: 16px; }
+      .brand-subtitle, .today { font-size: 10px; }
+      .nav { margin: 0 -2px; }
+      .nav button { min-height: 39px; padding: 0 12px; font-size: 11px; }
+      main { padding-top: 23px; }
+      .page-heading { align-items: flex-start; flex-direction: column; }
+      .page-heading > .button { width: 100%; }
+      .metric { min-height: 127px; padding: 15px; }
+      .metric-value { font-size: 23px; }
+      .quick-links { grid-template-columns: 1fr; }
+      .panel-head { padding: 15px; }
+      .panel-body { padding: 14px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .search { width: 100%; }
+      .table-tools { width: 100%; }
+      .ledger-filters { width: 100%; flex-wrap: wrap; }
+      .ledger-filters select { min-width: 0; flex: 1; }
+      .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+      .ranking-item { grid-template-columns: minmax(80px, .8fr) 1fr auto; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" role="img" aria-label="Logo Wonder Merch">W</div>
+        <div>
+          <p class="brand-name"><span class="brand-wonder">Wonder</span><span class="brand-merch"> Merch</span></p>
+          <p class="brand-subtitle">Merchandise · Persediaan &amp; Analisis HPP</p>
+        </div>
+      </div>
+      <div class="today" id="todayLabel"></div>
+    </header>
+
+    <nav class="nav" aria-label="Navigasi utama">
+      <button type="button" data-page="dashboard" aria-current="page">Dashboard</button>
+      <button type="button" data-page="produk">Produk</button>
+      <button type="button" data-page="pembelian">Pembelian</button>
+      <button type="button" data-page="penjualan">Penjualan</button>
+      <button type="button" data-page="kartu-stok">Kartu Stok</button>
+      <button type="button" data-page="analisis">Analisis HPP</button>
+    </nav>
+
+    <main>
+      <div class="config-banner" id="configBanner" hidden>
+        Supabase belum siap. Periksa Project URL dan Publishable Key pada konfigurasi JavaScript di file ini, lalu pastikan <strong>schema.sql</strong> sudah dijalankan di Supabase.
+      </div>
+
+      <section id="page-dashboard" class="page">
+        <div class="page-heading">
+          <div><p class="eyebrow">Ringkasan toko</p><h1>Dashboard</h1><p class="page-description">Pantau persediaan dan kinerja penjualan hari ini.</p></div>
+        </div>
+        <div class="metric-grid">
+          <article class="metric"><div class="metric-label">Total produk</div><div class="metric-value" id="metricProducts">0</div><div class="metric-foot">SKU aktif di katalog</div></article>
+          <article class="metric"><div class="metric-label">Total stok</div><div class="metric-value" id="metricStock">0</div><div class="metric-foot">Unit tersedia saat ini</div></article>
+          <article class="metric"><div class="metric-label">Laba kotor</div><div class="metric-value" id="metricProfit">Rp0</div><div class="metric-foot">Akumulasi dari transaksi penjualan</div></article>
+          <article class="metric"><div class="metric-label">Perlu restock</div><div class="metric-value" id="metricLow">0</div><div class="metric-foot">Varian menyentuh batas minimum</div></article>
+          <article class="metric"><div class="metric-label">Nilai persediaan</div><div class="metric-value" id="metricInventoryValue">Rp0</div><div class="metric-foot">Stok tersisa × HPP rata-rata</div></article>
+        </div>
+        <div class="dashboard-grid">
+          <section class="panel">
+            <div class="panel-head"><div><h2>Stok perlu diperhatikan</h2><p>Ambang stok minimum ditetapkan per varian</p></div><button type="button" class="button secondary small" data-go="produk">Lihat produk</button></div>
+            <div class="panel-body"><div class="alert-list" id="lowStockList"></div></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2>Aksi cepat</h2><p>Catat pergerakan stok</p></div></div>
+            <div class="panel-body">
+              <div class="quick-links">
+                <button type="button" class="quick-link" data-add-product><span class="quick-icon">＋</span><span><strong>Tambah produk</strong><small>Daftarkan SKU baru</small></span></button>
+                <button type="button" class="quick-link" data-go="pembelian"><span class="quick-icon">↓</span><span><strong>Catat pembelian</strong><small>Tambah stok masuk</small></span></button>
+                <button type="button" class="quick-link" data-go="penjualan"><span class="quick-icon">↑</span><span><strong>Catat penjualan</strong><small>Kurangi stok keluar</small></span></button>
+                <button type="button" class="quick-link" data-go="analisis"><span class="quick-icon">≈</span><span><strong>Lihat analisis HPP</strong><small>Bandingkan margin produk</small></span></button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="page-produk" class="page" hidden>
+        <div class="page-heading">
+          <div><p class="eyebrow">Katalog</p><h1>Produk</h1><p class="page-description">Kelola SKU, kategori, dan harga jual merchandise.</p></div>
+          <button type="button" class="button warm" id="addProductButton"><span aria-hidden="true">＋</span> Tambah produk</button>
+        </div>
+        <section class="panel form-panel">
+          <div class="panel-head"><div><h2>Penyesuaian stok</h2><p>Catat barang rusak, hilang, atau koreksi stok fisik.</p></div></div>
+          <div class="panel-body">
+            <form id="adjustmentForm">
+              <div class="form-grid">
+                <div class="field"><label for="adjustProduct">Varian produk</label><select id="adjustProduct" name="produk_id" required></select></div>
+                <div class="field"><label for="adjustType">Jenis penyesuaian</label><select id="adjustType" name="tipe" required><option value="keluar">Stok keluar (rusak/hilang)</option><option value="masuk">Stok masuk (koreksi lebih)</option></select></div>
+                <div class="field"><label for="adjustQty">Jumlah unit</label><input id="adjustQty" name="qty" type="number" min="1" step="1" required placeholder="Jumlah unit"></div>
+                <div class="field"><label for="adjustDate">Tanggal</label><input id="adjustDate" name="tanggal" type="date" required></div>
+                <div class="field full"><label for="adjustReason">Alasan</label><input id="adjustReason" name="alasan" maxlength="180" required placeholder="Contoh: 2 unit rusak saat pemeriksaan"></div>
+              </div>
+              <div class="form-actions"><button class="button warm" type="submit">Simpan penyesuaian</button></div>
+            </form>
+          </div>
+        </section>
+        <section class="panel form-panel">
+          <div class="panel-head"><div><h2>Riwayat penyesuaian</h2><p>Perubahan stok tercatat untuk audit</p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Produk / varian</th><th>Jenis</th><th>Jumlah</th><th>Alasan</th></tr></thead><tbody id="adjustmentRows"></tbody></table></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head"><div><h2>Daftar produk</h2><p id="productCountLabel">0 produk</p></div><div class="table-tools"><input class="search" id="productSearch" type="search" placeholder="Cari nama atau SKU..." aria-label="Cari produk"></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Produk / SKU</th><th>Kategori</th><th>Varian</th><th>Stok</th><th>Batas minimum</th><th>HPP</th><th>Harga jual</th><th>Margin</th><th>Aksi</th></tr></thead><tbody id="productRows"></tbody></table></div>
+        </section>
+      </section>
+
+      <section id="page-pembelian" class="page" hidden>
+        <div class="page-heading"><div><p class="eyebrow">Barang masuk</p><h1>Pembelian</h1><p class="page-description">Setiap pembelian memperbarui stok dan HPP rata-rata secara otomatis.</p></div></div>
+        <section class="panel form-panel">
+          <div class="panel-head"><div><h2>Buat Purchase Order</h2><p>Satu nota dapat memuat beberapa produk atau ukuran.</p></div></div>
+          <div class="panel-body">
+            <form id="purchaseForm">
+              <div class="form-grid">
+                <div class="field"><label for="purchaseNumber">Nomor transaksi / PO</label><input id="purchaseNumber" readonly></div>
+                <div class="field"><label for="purchaseSupplier">Vendor / konveksi</label><input id="purchaseSupplier" name="supplier" list="supplierSuggestions" maxlength="120" required placeholder="Pilih atau ketik nama vendor"><datalist id="supplierSuggestions"></datalist></div>
+                <div class="field"><label for="purchaseDate">Tanggal</label><input id="purchaseDate" name="tanggal" type="date" required></div>
+                <div class="field"><label for="purchaseExtraCost">Total biaya tambahan PO (Rp)</label><input id="purchaseExtraCost" name="biaya_tambahan" type="number" min="0" step="0.01" value="0" placeholder="Ongkir / handling"></div>
+                <div class="field"><label for="purchaseAllocation">Metode alokasi</label><select id="purchaseAllocation" disabled><option value="quantity">Berdasarkan jumlah unit (otomatis)</option></select></div>
+                <div class="field"><label for="purchaseInvoice">Invoice vendor / bukti ongkir (opsional)</label><input id="purchaseInvoice" name="invoice" type="file" accept="application/pdf,image/jpeg,image/png"><span class="field-hint">PDF, JPG, PNG · maks. 10 MB · disimpan privat</span></div>
+              </div>
+              <div class="table-wrap" style="margin-top:22px">
+                <table><thead><tr><th style="min-width:230px">Produk / varian</th><th>Qty</th><th>Harga beli / unit</th><th>Subtotal</th><th></th></tr></thead><tbody id="purchaseItemRows"></tbody></table>
+              </div>
+              <div class="form-actions" style="justify-content:space-between;flex-wrap:wrap">
+                <button class="button secondary" id="addPurchaseItem" type="button">＋ Tambah item</button>
+                <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:flex-end">
+                  <span id="purchaseSummary" class="field-hint">0 unit · biaya per unit Rp0</span>
+                  <strong id="purchaseTotal">Total PO Rp0</strong>
+                  <button class="button warm" type="submit">Simpan PO &amp; stok masuk</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head"><div><h2>Riwayat pembelian</h2><p>Transaksi stok masuk terbaru</p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Tanggal / PO</th><th>Produk / varian</th><th>Vendor</th><th>Jumlah</th><th>Harga satuan</th><th>Alokasi biaya</th><th>Total biaya</th><th>Invoice</th><th>Aksi</th></tr></thead><tbody id="purchaseRows"></tbody></table></div>
+        </section>
+      </section>
+
+      <section id="page-penjualan" class="page" hidden>
+        <div class="page-heading"><div><p class="eyebrow">Barang keluar</p><h1>Penjualan</h1><p class="page-description">Stok berkurang otomatis; HPP saat transaksi disimpan untuk analisis laba.</p></div></div>
+        <section class="panel form-panel">
+          <div class="panel-head"><div><h2>Catat penjualan baru</h2><p>Stok tidak dapat dijual melebihi persediaan tersedia</p></div></div>
+          <div class="panel-body">
+            <form id="salesForm">
+              <div class="form-grid">
+                <div class="field"><label for="salesProduct">Produk</label><select id="salesProduct" name="produk_id" required></select><span class="field-hint" id="salesStockHint">Pilih produk untuk melihat stok</span></div>
+                <div class="field"><label for="salesDate">Tanggal</label><input id="salesDate" name="tanggal" type="date" required></div>
+                <div class="field"><label for="salesQty">Jumlah unit</label><input id="salesQty" name="qty" type="number" min="1" step="1" placeholder="Contoh: 2" required></div>
+                <div class="field"><label for="salesPrice">Harga jual per unit (Rp)</label><input id="salesPrice" name="harga_jual" type="number" min="0" step="0.01" placeholder="Harga jual produk" required></div>
+                <div class="field"><label for="salesDiscount">Diskon total transaksi (Rp)</label><input id="salesDiscount" name="diskon" type="number" min="0" step="0.01" value="0" placeholder="Opsional"></div>
+                <div class="field"><label>Estimasi total</label><input id="salesTotal" type="text" value="Rp0" readonly></div>
+              </div>
+              <div class="form-actions"><button class="button" type="submit">Simpan penjualan</button></div>
+            </form>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head"><div><h2>Riwayat penjualan</h2><p>Nilai laba menggunakan HPP saat transaksi</p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Produk / varian</th><th>Jumlah</th><th>Harga jual</th><th>Diskon</th><th>Total bersih</th><th>Laba kotor</th><th>Aksi</th></tr></thead><tbody id="salesRows"></tbody></table></div>
+        </section>
+      </section>
+
+      <section id="page-kartu-stok" class="page" hidden>
+        <div class="page-heading">
+          <div><p class="eyebrow">Jejak persediaan</p><h1>Kartu Stok</h1><p class="page-description">Pergerakan masuk dan keluar diurutkan menurut tanggal, dengan saldo dan nilai persediaan berjalan.</p></div>
+        </div>
+        <section class="panel">
+          <div class="panel-head">
+            <div><h2>Ledger persediaan</h2><p id="ledgerCount">0 pergerakan</p></div>
+            <div class="ledger-filters"><select id="ledgerProductFilter" aria-label="Filter produk"><option value="">Semua produk</option></select><button class="button secondary small" type="button" id="exportLedger">Unduh CSV</button></div>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>No. referensi / batch</th><th>Produk / keterangan</th><th>Masuk</th><th>Keluar</th><th>Sisa stok</th><th>HPP / unit</th><th>Total nilai stok</th><th>Lampiran</th></tr></thead><tbody id="ledgerRows"></tbody></table></div>
+        </section>
+      </section>
+
+      <section id="page-analisis" class="page" hidden>
+        <div class="page-heading"><div><p class="eyebrow">Profitabilitas</p><h1>Analisis HPP</h1><p class="page-description">HPP berjalan memakai metode average; laba kotor memakai HPP yang tercatat saat penjualan.</p></div></div>
+        <section class="panel">
+          <div class="panel-head"><div><h2>HPP dan margin produk</h2><p>Margin per unit = harga jual dikurangi HPP</p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Produk</th><th>Stok</th><th>HPP / unit</th><th>Harga jual</th><th>Margin / unit</th><th>Margin %</th><th>Laba kotor</th></tr></thead><tbody id="analysisRows"></tbody></table></div>
+        </section>
+        <section class="panel" style="margin-top:16px">
+          <div class="panel-head"><div><h2>Kontribusi laba tertinggi</h2><p>Diurutkan berdasarkan laba kotor, bukan jumlah unit terjual</p></div></div>
+          <div class="panel-body"><div class="ranking-list" id="profitRanking"></div></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="dialog" id="productDialog">
+    <div class="dialog-head"><div><h2 id="productDialogTitle">Tambah produk</h2><p>Data stok dan HPP dikelola dari transaksi.</p></div><button type="button" class="icon-button" id="closeProductDialog" aria-label="Tutup">×</button></div>
+    <div class="dialog-body">
+      <form id="productForm">
+        <input type="hidden" name="id" id="productId">
+        <div class="form-grid">
+          <div class="field"><label for="productSku">SKU</label><input id="productSku" name="sku" maxlength="60" required placeholder="Contoh: TSH-001"></div>
+          <div class="field"><label for="productName">Nama produk</label><input id="productName" name="nama" maxlength="120" required placeholder="Nama merchandise"></div>
+          <div class="field"><label for="productCategory">Kategori</label><input id="productCategory" name="kategori" maxlength="80" placeholder="Contoh: Apparel"></div>
+          <div class="field"><label for="productSize">Ukuran (opsional)</label><input id="productSize" name="ukuran" maxlength="40" placeholder="Contoh: S, M, L, XL"></div>
+          <div class="field"><label for="productSellingPrice">Harga jual (Rp)</label><input id="productSellingPrice" name="harga_jual" type="number" min="0" step="0.01" required placeholder="Contoh: 85000"></div>
+          <div class="field"><label for="productMinimumStock">Batas stok minimum</label><input id="productMinimumStock" name="stok_minimum" type="number" min="0" step="1" value="5" required></div>
+        </div>
+        <div class="form-actions"><button type="button" class="button secondary" id="cancelProductDialog">Batal</button><button type="submit" class="button warm">Simpan produk</button></div>
+      </form>
+    </div>
+  </dialog>
+  <dialog class="dialog" id="transactionDialog">
+    <div class="dialog-head"><div><h2 id="transactionDialogTitle">Edit transaksi</h2><p id="transactionDialogDescription">Perubahan akan memperbarui stok terkait.</p></div><button type="button" class="icon-button" id="closeTransactionDialog" aria-label="Tutup">×</button></div>
+    <div class="dialog-body"><form id="transactionForm"></form></div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    // Versi statis ini berkomunikasi langsung dengan Supabase; Node.js tidak diperlukan.
+    // Publishable key memang boleh berada di browser. Jangan pernah menaruh service_role key di sini.
+    const SUPABASE_URL = 'https://povcfgzqmffzwenkcfai.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_1O86T77abaVY0hPdv5lZiw_Li8GclQB';
+    const db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const state = { produk: [], pembelian: [], penjualan: [], penyesuaian: [], analisis: [], ledger: [], ledgerError: false, toastTimer: null };
+    const rupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+    const angka = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+    }
+
+    function rupiahTeks(value) { return rupiah.format(Number(value) || 0); }
+
+    function tanggalHariIni() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
+    function formatTanggal(value) {
+      if (!value) return '—';
+      const parsed = new Date(`${value.slice(0, 10)}T00:00:00`);
+      return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(parsed);
+    }
+
+    async function api(path, options = {}) {
+      if (!db) throw new Error('Library Supabase tidak termuat. Pastikan perangkat terhubung ke internet.');
+      const method = (options.method || 'GET').toUpperCase();
+      const body = options.body ? JSON.parse(options.body) : {};
+      const file = options.file || null;
+      const unwrap = ({ data, error }) => {
+        if (error) throw new Error(error.message || 'Permintaan ke Supabase gagal.');
+        return data;
+      };
+      const match = path.match(/^\/api\/produk\/([^/]+)$/);
+      const id = match ? decodeURIComponent(match[1]) : null;
+
+      if (path === '/api/produk' && method === 'GET') {
+        return unwrap(await db.from('produk').select('*').order('nama'));
+      }
+      if (path === '/api/produk' && method === 'POST') {
+        const stokMinimum = Number(body.stok_minimum ?? 5);
+        if (!Number.isInteger(stokMinimum) || stokMinimum < 0) throw new Error('Batas stok minimum harus bilangan bulat minimal 0.');
+        return unwrap(await db.from('produk').insert({
+          sku: String(body.sku || '').trim(),
+          nama: String(body.nama || '').trim(),
+          kategori: String(body.kategori || 'Lainnya').trim() || 'Lainnya',
+          ukuran: String(body.ukuran || '').trim(),
+          stok_minimum: stokMinimum,
+          harga_jual: Number(body.harga_jual),
+          stok: 0,
+          hpp: 0
+        }).select().single());
+      }
+      if (id && method === 'PUT') {
+        const stokMinimum = Number(body.stok_minimum ?? 5);
+        if (!Number.isInteger(stokMinimum) || stokMinimum < 0) throw new Error('Batas stok minimum harus bilangan bulat minimal 0.');
+        const result = unwrap(await db.from('produk').update({
+          sku: String(body.sku || '').trim(),
+          nama: String(body.nama || '').trim(),
+          kategori: String(body.kategori || 'Lainnya').trim() || 'Lainnya',
+          ukuran: String(body.ukuran || '').trim(),
+          stok_minimum: stokMinimum,
+          harga_jual: Number(body.harga_jual)
+        }).eq('id', id).select().maybeSingle());
+        if (!result) throw new Error('Produk tidak ditemukan.');
+        return result;
+      }
+      if (id && method === 'DELETE') {
+        const pembelian = unwrap(await db.from('pembelian').select('id').eq('produk_id', id).limit(1));
+        const penjualan = unwrap(await db.from('penjualan').select('id').eq('produk_id', id).limit(1));
+        const penyesuaian = unwrap(await db.from('penyesuaian_stok').select('id').eq('produk_id', id).limit(1));
+        if (pembelian.length || penjualan.length || penyesuaian.length) {
+          throw new Error('Produk memiliki riwayat transaksi dan tidak dapat dihapus.');
+        }
+        const deleted = unwrap(await db.from('produk').delete().eq('id', id).select('id').maybeSingle());
+        if (!deleted) throw new Error('Produk tidak ditemukan.');
+        return { message: 'Produk berhasil dihapus.' };
+      }
+      if (path === '/api/produk/:id' && method === 'GET') {
+        throw new Error('Gunakan ID produk yang valid.');
+      }
+      if (path === '/api/pembelian' && method === 'GET') {
+        const rows = unwrap(await db.from('pembelian').select('*').order('tanggal', { ascending: false }));
+        const [produk, headers] = await Promise.all([
+          db.from('produk').select('id, sku, nama, ukuran'),
+          db.from('pembelian_po').select('*')
+        ]);
+        const dataProduk = unwrap(produk);
+        const index = new Map(dataProduk.map((item) => [String(item.id), item]));
+        if (headers.error?.code === 'PGRST205') {
+          return rows.map((item) => ({ ...item, produk: index.get(String(item.produk_id)) || null, po: null }));
+        }
+        const dataHeader = unwrap(headers);
+        const indexPo = new Map(dataHeader.map((item) => [String(item.id), item]));
+        const paths = [...new Set(dataHeader.map((item) => item.invoice_path).filter(Boolean))];
+        const signedEntries = await Promise.all(paths.map(async (path) => {
+          const { data, error } = await db.storage.from('invoice-vendor').createSignedUrl(path, 3600);
+          return [path, error ? null : data.signedUrl];
+        }));
+        const signedUrls = new Map(signedEntries);
+        return rows.map((item) => ({
+          ...item,
+          produk: index.get(String(item.produk_id)) || null,
+          po: indexPo.get(String(item.po_id)) || null,
+          invoice_url: signedUrls.get(indexPo.get(String(item.po_id))?.invoice_path) || null
+        }));
+      }
+      if (path.startsWith('/api/pembelian-po/nomor') && method === 'GET') {
+        const tanggal = new URLSearchParams(path.split('?')[1] || '').get('tanggal') || tanggalHariIni();
+        const prefix = `PO-${tanggal.replaceAll('-', '')}-`;
+        const headers = unwrap(await db.from('pembelian_po').select('nomor_po').like('nomor_po', `${prefix}%`));
+        const next = headers.reduce((maximum, item) => {
+          const suffix = Number(item.nomor_po.slice(prefix.length));
+          return Number.isInteger(suffix) ? Math.max(maximum, suffix) : maximum;
+        }, 0) + 1;
+        return { nomor_po: `${prefix}${String(next).padStart(3, '0')}` };
+      }
+      if (path === '/api/pembelian-po' && method === 'POST') {
+        const supplier = String(body.supplier || '').trim();
+        const tanggal = body.tanggal || tanggalHariIni();
+        const totalBiayaTambahan = Number(body.biaya_tambahan || 0);
+        const items = Array.isArray(body.items) ? body.items : [];
+        if (file && (!['application/pdf', 'image/jpeg', 'image/png'].includes(file.type) || file.size > 10 * 1024 * 1024)) {
+          throw new Error('Invoice harus PDF, JPG, atau PNG dan ukurannya maksimal 10 MB.');
+        }
+        if (!supplier) throw new Error('Vendor wajib diisi.');
+        if (!Number.isFinite(totalBiayaTambahan) || totalBiayaTambahan < 0) throw new Error('Total biaya tambahan harus minimal 0.');
+        if (!items.length) throw new Error('Tambahkan minimal satu item pembelian.');
+        const totalQty = items.reduce((sum, item) => sum + Number(item.qty), 0);
+        if (!Number.isInteger(totalQty) || totalQty <= 0) throw new Error('Total kuantitas harus berupa bilangan bulat lebih dari 0.');
+        for (const item of items) {
+          item.qty = Number(item.qty);
+          item.harga_satuan = Number(item.harga_satuan);
+          if (!item.produk_id || !Number.isInteger(item.qty) || item.qty <= 0 || !Number.isFinite(item.harga_satuan) || item.harga_satuan < 0) {
+            throw new Error('Setiap item harus memiliki produk, qty bulat di atas 0, dan harga beli minimal 0.');
+          }
+        }
+
+        const prefix = `PO-${tanggal.replaceAll('-', '')}-`;
+        const headersExisting = unwrap(await db.from('pembelian_po').select('nomor_po').like('nomor_po', `${prefix}%`));
+        const urutan = headersExisting.reduce((maximum, item) => {
+          const suffix = Number(item.nomor_po.slice(prefix.length));
+          return Number.isInteger(suffix) ? Math.max(maximum, suffix) : maximum;
+        }, 0) + 1;
+        const nomorPo = `${prefix}${String(urutan).padStart(3, '0')}`;
+
+        const totalSen = Math.round(totalBiayaTambahan * 100);
+        let sisaSen = totalSen;
+        const preparedItems = items.map((item, index) => {
+          const alokasiSen = index === items.length - 1
+            ? sisaSen
+            : Math.min(sisaSen, Math.round(totalSen * item.qty / totalQty));
+          sisaSen -= alokasiSen;
+          return { ...item, biaya_tambahan: alokasiSen / 100 };
+        });
+
+        const idProduk = [...new Set(preparedItems.map((item) => String(item.produk_id)))];
+        const daftarProduk = unwrap(await db.from('produk').select('*').in('id', idProduk));
+        const produkAwal = new Map(daftarProduk.map((item) => [String(item.id), item]));
+        if (produkAwal.size !== idProduk.length) throw new Error('Salah satu produk pada PO tidak ditemukan.');
+
+        const header = unwrap(await db.from('pembelian_po').insert({
+          nomor_po: nomorPo,
+          supplier,
+          tanggal,
+          total_biaya_tambahan: totalBiayaTambahan,
+          metode_alokasi: 'quantity'
+        }).select().single());
+        let invoicePath = null;
+        if (file) {
+          const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '_');
+          invoicePath = `${header.id}/${Date.now()}-${safeName}`;
+          const { error: uploadError } = await db.storage.from('invoice-vendor').upload(invoicePath, file, {
+            contentType: file.type,
+            upsert: false
+          });
+          if (uploadError) {
+            await db.from('pembelian_po').delete().eq('id', header.id);
+            throw new Error(`Invoice gagal diunggah: ${uploadError.message}`);
+          }
+          const { error: headerError } = await db.from('pembelian_po').update({ invoice_path: invoicePath }).eq('id', header.id);
+          if (headerError) {
+            await db.storage.from('invoice-vendor').remove([invoicePath]);
+            await db.from('pembelian_po').delete().eq('id', header.id);
+            throw new Error(`Path invoice gagal disimpan: ${headerError.message}`);
+          }
+        }
+        const produkBerjalan = new Map(daftarProduk.map((item) => [String(item.id), { ...item }]));
+        const details = [];
+        for (const item of preparedItems) {
+          const key = String(item.produk_id);
+          const produk = produkBerjalan.get(key);
+          const stokBaru = Number(produk.stok) + item.qty;
+          const biayaBaru = item.qty * item.harga_satuan + item.biaya_tambahan;
+          const hppBaru = Number(((Number(produk.stok) * Number(produk.hpp) + biayaBaru) / stokBaru).toFixed(2));
+          produk.stok = stokBaru;
+          produk.hpp = hppBaru;
+          details.push({
+            po_id: header.id,
+            produk_id: produk.id,
+            qty: item.qty,
+            harga_satuan: item.harga_satuan,
+            biaya_tambahan: item.biaya_tambahan,
+            total: Number(biayaBaru.toFixed(2)),
+            supplier,
+            tanggal
+          });
+        }
+
+        const produkTerubah = [];
+        try {
+          for (const [key, produkFinal] of produkBerjalan) {
+            const produkAwalSatu = produkAwal.get(key);
+            unwrap(await db.from('produk').update({ stok: produkFinal.stok, hpp: produkFinal.hpp }).eq('id', produkFinal.id));
+            produkTerubah.push(produkAwalSatu);
+          }
+          const inserted = unwrap(await db.from('pembelian').insert(details).select());
+          return { nomor_po: nomorPo, header, items: inserted, total_qty: totalQty };
+        } catch (error) {
+          for (const original of produkTerubah) {
+            await db.from('produk').update({ stok: original.stok, hpp: original.hpp }).eq('id', original.id);
+          }
+          if (invoicePath) await db.storage.from('invoice-vendor').remove([invoicePath]);
+          await db.from('pembelian_po').delete().eq('id', header.id);
+          throw error;
+        }
+      }
+      const purchaseMatch = path.match(/^\/api\/pembelian\/([^/]+)$/);
+      if (purchaseMatch && (method === 'PUT' || method === 'DELETE')) {
+        const purchaseId = decodeURIComponent(purchaseMatch[1]);
+        const current = unwrap(await db.from('pembelian').select('*').eq('id', purchaseId).maybeSingle());
+        if (!current) throw new Error('Transaksi pembelian tidak ditemukan.');
+        const produk = unwrap(await db.from('produk').select('*').eq('id', current.produk_id).maybeSingle());
+        if (!produk) throw new Error('Produk pembelian tidak ditemukan.');
+        const qtyBaru = method === 'DELETE' ? 0 : Number(body.qty);
+        const hargaBaru = method === 'DELETE' ? 0 : Number(body.harga_satuan);
+        if (method === 'PUT' && (!Number.isInteger(qtyBaru) || qtyBaru <= 0 || !Number.isFinite(hargaBaru) || hargaBaru < 0)) {
+          throw new Error('Jumlah harus bilangan bulat di atas 0 dan harga beli minimal 0.');
+        }
+        const stokBaru = Number(produk.stok) - Number(current.qty) + qtyBaru;
+        const biayaBaru = method === 'DELETE' ? 0 : Number(body.biaya_tambahan);
+        const biayaLama = Number(current.qty) * Number(current.harga_satuan) + Number(current.biaya_tambahan || 0);
+        const biayaEfektifBaru = qtyBaru * hargaBaru + biayaBaru;
+        const nilaiBaru = Number(produk.stok) * Number(produk.hpp) - biayaLama + biayaEfektifBaru;
+        if (stokBaru < 0) throw new Error('Pembelian ini sudah terpakai. Perubahan jumlah akan membuat stok negatif.');
+        if (method === 'PUT' && (!Number.isFinite(biayaBaru) || biayaBaru < 0)) throw new Error('Biaya tambahan harus minimal 0.');
+        if (nilaiBaru < -0.01 || (stokBaru === 0 && nilaiBaru > 0.01)) {
+          throw new Error('Pembelian ini sudah memengaruhi persediaan berikutnya sehingga tidak dapat diubah/dihapus dengan nilai tersebut.');
+        }
+        const hppBaru = stokBaru > 0 ? Number((Math.max(0, nilaiBaru) / stokBaru).toFixed(2)) : 0;
+        unwrap(await db.from('produk').update({ stok: stokBaru, hpp: hppBaru }).eq('id', produk.id));
+        try {
+          if (method === 'DELETE') {
+            unwrap(await db.from('pembelian').delete().eq('id', purchaseId));
+            return { message: 'Pembelian berhasil dihapus.' };
+          }
+          return unwrap(await db.from('pembelian').update({
+            qty: qtyBaru,
+            harga_satuan: hargaBaru,
+            biaya_tambahan: biayaBaru,
+            total: Number(biayaEfektifBaru.toFixed(2)),
+            supplier: String(body.supplier || '').trim(),
+            tanggal: body.tanggal
+          }).eq('id', purchaseId).select().single());
+        } catch (error) {
+          await db.from('produk').update({ stok: produk.stok, hpp: produk.hpp }).eq('id', produk.id);
+          throw error;
+        }
+      }
+      if (path === '/api/penjualan' && method === 'GET') {
+        const rows = unwrap(await db.from('penjualan').select('*').order('tanggal', { ascending: false }));
+        const produk = unwrap(await db.from('produk').select('id, sku, nama, ukuran'));
+        const index = new Map(produk.map((item) => [String(item.id), item]));
+        return rows.map((item) => ({ ...item, produk: index.get(String(item.produk_id)) || null }));
+      }
+      if (path === '/api/kartu-stok' && method === 'GET') {
+        const [produkResult, beliResult, jualResult, adjustResult, poResult] = await Promise.all([
+          db.from('produk').select('*').order('nama'),
+          db.from('pembelian').select('*'),
+          db.from('penjualan').select('*'),
+          db.from('penyesuaian_stok').select('*'),
+          db.from('pembelian_po').select('*')
+        ]);
+        const produk = unwrap(produkResult);
+        const pembelian = unwrap(beliResult);
+        const penjualan = unwrap(jualResult);
+        const penyesuaian = unwrap(adjustResult);
+        const headerData = poResult.error?.code === 'PGRST205' ? [] : unwrap(poResult);
+        const produkIndex = new Map(produk.map((item) => [String(item.id), item]));
+        const poIndex = new Map(headerData.map((item) => [String(item.id), item]));
+        const eventsByProduct = new Map(produk.map((item) => [String(item.id), []]));
+        const addEvent = (event) => eventsByProduct.get(String(event.produk_id))?.push(event);
+
+        for (const item of pembelian) {
+          const po = poIndex.get(String(item.po_id));
+          addEvent({
+            produk_id: item.produk_id,
+            date: po?.tanggal || item.tanggal,
+            created_at: item.created_at || `${po?.tanggal || item.tanggal}T00:00:00`,
+            reference: po?.nomor_po || `BUY-${item.id}`,
+            description: `Pembelian · ${item.supplier || po?.supplier || 'Vendor'}`,
+            masuk: Number(item.qty),
+            keluar: 0,
+            hpp: Number(item.harga_satuan) + Number(item.biaya_tambahan || 0) / Number(item.qty),
+            purchase_cost: Number(item.total),
+            invoice_path: po?.invoice_path || null
+          });
+        }
+        for (const item of penjualan) {
+          addEvent({
+            produk_id: item.produk_id,
+            date: item.tanggal,
+            created_at: item.created_at || `${item.tanggal}T00:00:00`,
+            reference: `SLS-${String(item.id).padStart(6, '0')}`,
+            description: 'Penjualan',
+            masuk: 0,
+            keluar: Number(item.qty),
+            hpp: Number(item.hpp_saat_transaksi),
+            purchase_cost: 0,
+            invoice_path: null
+          });
+        }
+        for (const item of penyesuaian) {
+          const masuk = item.tipe === 'masuk';
+          addEvent({
+            produk_id: item.produk_id,
+            date: item.tanggal,
+            created_at: item.created_at || `${item.tanggal}T00:00:00`,
+            reference: `ADJ-${String(item.id).padStart(6, '0')}`,
+            description: `Penyesuaian · ${item.alasan}`,
+            masuk: masuk ? Number(item.qty) : 0,
+            keluar: masuk ? 0 : Number(item.qty),
+            hpp: Number(item.hpp_saat_transaksi || produkIndex.get(String(item.produk_id))?.hpp || 0),
+            purchase_cost: 0,
+            invoice_path: null
+          });
+        }
+
+        const events = [];
+        for (const product of produk) {
+          const productEvents = eventsByProduct.get(String(product.id));
+          productEvents.sort((a, b) => new Date(a.created_at) - new Date(b.created_at) || a.reference.localeCompare(b.reference));
+          const netMovement = productEvents.reduce((sum, item) => sum + item.masuk - item.keluar, 0);
+          const openingQty = Number(product.stok) - netMovement;
+          const purchaseValue = productEvents.reduce((sum, item) => sum + item.purchase_cost, 0);
+          const outboundCost = productEvents.reduce((sum, item) => sum + item.keluar * item.hpp, 0);
+          const adjustmentInCost = productEvents.filter((item) => item.masuk && item.reference.startsWith('ADJ-'))
+            .reduce((sum, item) => sum + item.masuk * item.hpp, 0);
+          const adjustmentOutCost = productEvents.filter((item) => item.keluar && item.reference.startsWith('ADJ-'))
+            .reduce((sum, item) => sum + item.keluar * item.hpp, 0);
+          const closingValue = Number(product.stok) * Number(product.hpp);
+          const openingValue = closingValue - purchaseValue + outboundCost + adjustmentOutCost - adjustmentInCost;
+          let balance = Math.max(0, openingQty);
+          let value = openingQty > 0 ? Math.max(0, openingValue) : 0;
+          if (balance > 0) {
+            const openingTime = productEvents.length
+              ? new Date(new Date(productEvents[0].created_at).getTime() - 1).toISOString()
+              : product.created_at || `${tanggalHariIni()}T00:00:00`;
+            events.push({
+              product,
+              date: String(productEvents[0]?.date || product.created_at || tanggalHariIni()).slice(0, 10),
+              created_at: openingTime,
+              reference: `OPEN-${product.sku}`,
+              description: 'Saldo awal tercatat',
+              masuk: balance,
+              keluar: 0,
+              balance,
+              hpp: value / balance,
+              stock_value: value,
+              invoice_path: null,
+              invoice_url: null
+            });
+          }
+          for (const event of productEvents) {
+            const hppBefore = balance > 0 ? value / balance : Number(product.hpp);
+            if (event.masuk > 0) {
+              balance += event.masuk;
+              value += event.purchase_cost || event.masuk * hppBefore;
+            }
+            if (event.keluar > 0) {
+              balance -= event.keluar;
+              value = Math.max(0, value - event.keluar * event.hpp);
+            }
+            events.push({
+              ...event,
+              product,
+              balance,
+              hpp: event.keluar > 0 ? event.hpp : (balance > 0 ? value / balance : 0),
+              stock_value: value,
+              invoice_url: null
+            });
+          }
+        }
+        const invoicePaths = [...new Set(events.map((item) => item.invoice_path).filter(Boolean))];
+        const signed = await Promise.all(invoicePaths.map(async (path) => {
+          const { data, error } = await db.storage.from('invoice-vendor').createSignedUrl(path, 3600);
+          return [path, error ? null : data.signedUrl];
+        }));
+        const signedIndex = new Map(signed);
+        for (const event of events) event.invoice_url = signedIndex.get(event.invoice_path) || null;
+        events.sort((a, b) => new Date(a.created_at) - new Date(b.created_at) || a.reference.localeCompare(b.reference));
+        return events;
+      }
+      if (path === '/api/penyesuaian-stok' && method === 'GET') {
+        const rows = unwrap(await db.from('penyesuaian_stok').select('*').order('tanggal', { ascending: false }));
+        const produk = unwrap(await db.from('produk').select('id, sku, nama, ukuran'));
+        const index = new Map(produk.map((item) => [String(item.id), item]));
+        return rows.map((item) => ({ ...item, produk: index.get(String(item.produk_id)) || null }));
+      }
+      if (path === '/api/penyesuaian-stok' && method === 'POST') {
+        const qty = Number(body.qty);
+        if (!Number.isInteger(qty) || qty <= 0 || !['masuk', 'keluar'].includes(body.tipe)) {
+          throw new Error('Pilih jenis penyesuaian dan isi jumlah unit bilangan bulat lebih dari 0.');
+        }
+        const alasan = String(body.alasan || '').trim();
+        if (!alasan) throw new Error('Alasan penyesuaian wajib diisi.');
+        const produk = unwrap(await db.from('produk').select('*').eq('id', body.produk_id).maybeSingle());
+        if (!produk) throw new Error('Produk tidak ditemukan.');
+        const stokBaru = Number(produk.stok) + (body.tipe === 'masuk' ? qty : -qty);
+        if (stokBaru < 0) throw new Error(`Stok tidak cukup. Stok tersedia ${produk.stok} unit.`);
+        unwrap(await db.from('produk').update({ stok: stokBaru }).eq('id', produk.id));
+        try {
+          return unwrap(await db.from('penyesuaian_stok').insert({
+            produk_id: produk.id,
+            tipe: body.tipe,
+            qty,
+            alasan,
+            tanggal: body.tanggal || tanggalHariIni()
+          }).select().single());
+        } catch (error) {
+          await db.from('produk').update({ stok: produk.stok }).eq('id', produk.id);
+          throw error;
+        }
+      }
+      const salesMatch = path.match(/^\/api\/penjualan\/([^/]+)$/);
+      if (salesMatch && (method === 'PUT' || method === 'DELETE')) {
+        const salesId = decodeURIComponent(salesMatch[1]);
+        const current = unwrap(await db.from('penjualan').select('*').eq('id', salesId).maybeSingle());
+        if (!current) throw new Error('Transaksi penjualan tidak ditemukan.');
+        const produk = unwrap(await db.from('produk').select('id, stok').eq('id', current.produk_id).maybeSingle());
+        if (!produk) throw new Error('Produk penjualan tidak ditemukan.');
+        const qtyBaru = method === 'DELETE' ? 0 : Number(body.qty);
+        const hargaBaru = method === 'DELETE' ? 0 : Number(body.harga_jual);
+        const diskonBaru = method === 'DELETE' ? 0 : Number(body.diskon || 0);
+        if (method === 'PUT' && (!Number.isInteger(qtyBaru) || qtyBaru <= 0 || !Number.isFinite(hargaBaru) || hargaBaru < 0 || !Number.isFinite(diskonBaru) || diskonBaru < 0 || diskonBaru > qtyBaru * hargaBaru)) {
+          throw new Error('Jumlah harus bilangan bulat di atas 0 dan harga jual minimal 0.');
+        }
+        const stokBaru = Number(produk.stok) + Number(current.qty) - qtyBaru;
+        if (stokBaru < 0) throw new Error(`Stok tidak cukup untuk perubahan ini. Stok tersedia ${Number(produk.stok) + Number(current.qty)} unit.`);
+        unwrap(await db.from('produk').update({ stok: stokBaru }).eq('id', produk.id));
+        try {
+          if (method === 'DELETE') {
+            unwrap(await db.from('penjualan').delete().eq('id', salesId));
+            return { message: 'Penjualan berhasil dihapus.' };
+          }
+          return unwrap(await db.from('penjualan').update({
+            qty: qtyBaru,
+            harga_jual: hargaBaru,
+            diskon: diskonBaru,
+            total: Number((qtyBaru * hargaBaru - diskonBaru).toFixed(2)),
+            tanggal: body.tanggal
+          }).eq('id', salesId).select().single());
+        } catch (error) {
+          await db.from('produk').update({ stok: produk.stok }).eq('id', produk.id);
+          throw error;
+        }
+      }
+      if (path === '/api/pembelian' && method === 'POST') {
+        const qty = Number(body.qty);
+        const hargaSatuan = Number(body.harga_satuan);
+        const biayaTambahan = Number(body.biaya_tambahan || 0);
+        if (!Number.isInteger(qty) || qty <= 0 || !Number.isFinite(hargaSatuan) || hargaSatuan < 0 || !Number.isFinite(biayaTambahan) || biayaTambahan < 0) {
+          throw new Error('Jumlah harus bilangan bulat di atas 0 dan harga beli minimal 0.');
+        }
+        const produk = unwrap(await db.from('produk').select('*').eq('id', body.produk_id).maybeSingle());
+        if (!produk) throw new Error('Produk tidak ditemukan.');
+        const stokBaru = Number(produk.stok) + qty;
+        const totalBiaya = qty * hargaSatuan + biayaTambahan;
+        const hppBaru = Number(((Number(produk.stok) * Number(produk.hpp) + totalBiaya) / stokBaru).toFixed(2));
+        unwrap(await db.from('produk').update({ stok: stokBaru, hpp: hppBaru }).eq('id', produk.id));
+        try {
+          const pembelian = unwrap(await db.from('pembelian').insert({
+            produk_id: produk.id,
+            qty,
+            harga_satuan: hargaSatuan,
+            biaya_tambahan: biayaTambahan,
+            total: Number(totalBiaya.toFixed(2)),
+            supplier: String(body.supplier || '').trim(),
+            tanggal: body.tanggal || tanggalHariIni()
+          }).select().single());
+          return { ...pembelian, produk: { ...produk, stok: stokBaru, hpp: hppBaru }, hpp_baru: hppBaru };
+        } catch (error) {
+          await db.from('produk').update({ stok: produk.stok, hpp: produk.hpp }).eq('id', produk.id);
+          throw error;
+        }
+      }
+      if (path === '/api/penjualan' && method === 'POST') {
+        const qty = Number(body.qty);
+        const hargaJual = Number(body.harga_jual);
+        const diskon = Number(body.diskon || 0);
+        if (!Number.isInteger(qty) || qty <= 0 || !Number.isFinite(hargaJual) || hargaJual < 0 || !Number.isFinite(diskon) || diskon < 0 || diskon > qty * hargaJual) {
+          throw new Error('Jumlah harus bilangan bulat di atas 0 dan harga jual minimal 0.');
+        }
+        const produk = unwrap(await db.from('produk').select('*').eq('id', body.produk_id).maybeSingle());
+        if (!produk) throw new Error('Produk tidak ditemukan.');
+        if (Number(produk.stok) < qty) throw new Error(`Stok tidak cukup. Stok tersedia ${produk.stok}.`);
+        const stokBaru = Number(produk.stok) - qty;
+        unwrap(await db.from('produk').update({ stok: stokBaru }).eq('id', produk.id));
+        try {
+          const penjualan = unwrap(await db.from('penjualan').insert({
+            produk_id: produk.id,
+            qty,
+            harga_jual: hargaJual,
+            diskon,
+            hpp_saat_transaksi: Number(produk.hpp),
+            total: Number((qty * hargaJual - diskon).toFixed(2)),
+            tanggal: body.tanggal || tanggalHariIni()
+          }).select().single());
+          return { ...penjualan, produk: { ...produk, stok: stokBaru } };
+        } catch (error) {
+          await db.from('produk').update({ stok: produk.stok }).eq('id', produk.id);
+          throw error;
+        }
+      }
+      if (path === '/api/dashboard' && method === 'GET') {
+        const produk = unwrap(await db.from('produk').select('id, stok, hpp, stok_minimum'));
+        const penjualan = unwrap(await db.from('penjualan').select('qty, total, hpp_saat_transaksi'));
+        const totalLaba = penjualan.reduce((sum, item) => sum + Number(item.total) - Number(item.qty) * Number(item.hpp_saat_transaksi), 0);
+        return {
+          total_produk: produk.length,
+          total_stok: produk.reduce((sum, item) => sum + Number(item.stok), 0),
+          total_laba: Number(totalLaba.toFixed(2)),
+          stok_minimum: produk.filter((item) => Number(item.stok) <= Number(item.stok_minimum)).length,
+          nilai_persediaan: Number(produk.reduce((sum, item) => sum + Number(item.stok) * Number(item.hpp), 0).toFixed(2))
+        };
+      }
+      if (path === '/api/analisis-hpp' && method === 'GET') {
+        const produk = unwrap(await db.from('produk').select('*').order('nama'));
+        const penjualan = unwrap(await db.from('penjualan').select('produk_id, qty, total, hpp_saat_transaksi'));
+        const labaProduk = new Map();
+        for (const item of penjualan) {
+          const key = String(item.produk_id);
+          const laba = Number(item.total) - Number(item.qty) * Number(item.hpp_saat_transaksi);
+          labaProduk.set(key, (labaProduk.get(key) || 0) + laba);
+        }
+        return produk.map((item) => {
+          const hpp = Number(item.hpp);
+          const hargaJual = Number(item.harga_jual);
+          const margin = hargaJual - hpp;
+          return {
+            ...item,
+            margin: Number(margin.toFixed(2)),
+            margin_persen: hargaJual > 0 ? Number(((margin / hargaJual) * 100).toFixed(2)) : 0,
+            laba_kotor: Number((labaProduk.get(String(item.id)) || 0).toFixed(2))
+          };
+        });
+      }
+      throw new Error(`Operasi ${method} ${path} tidak tersedia.`);
+    }
+
+    function notify(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.toggle('error', isError);
+      toast.hidden = false;
+      clearTimeout(state.toastTimer);
+      state.toastTimer = setTimeout(() => { toast.hidden = true; }, 3400);
+    }
+
+    function emptyRow(columns, message = 'Belum ada data.') {
+      return `<tr><td colspan="${columns}"><div class="empty-state">${message}</div></td></tr>`;
+    }
+
+    async function loadData() {
+      try {
+        const [produk, pembelian, penjualan, penyesuaian, dashboard, analisis, ledger] = await Promise.all([
+          api('/api/produk'), api('/api/pembelian'), api('/api/penjualan'), api('/api/penyesuaian-stok'), api('/api/dashboard'), api('/api/analisis-hpp'),
+          api('/api/kartu-stok').then((result) => { state.ledgerError = false; return result; })
+            .catch((error) => { console.warn('Kartu stok belum tersedia:', error.message); state.ledgerError = true; return []; })
+        ]);
+        state.produk = produk;
+        state.pembelian = pembelian;
+        state.penjualan = penjualan;
+        state.penyesuaian = penyesuaian;
+        state.analisis = analisis;
+        state.ledger = ledger;
+        document.getElementById('configBanner').hidden = true;
+        renderAll(dashboard);
+      } catch (error) {
+        document.getElementById('configBanner').hidden = false;
+        notify(error.message, true);
+      }
+    }
+
+    function renderAll(dashboard) {
+      renderDashboard(dashboard);
+      renderProducts();
+      renderPurchases();
+      renderSales();
+      renderAdjustments();
+      renderAnalysis();
+      renderLedger();
+      fillProductSelects();
+    }
+
+    function renderDashboard(dashboard) {
+      document.getElementById('metricProducts').textContent = angka.format(dashboard.total_produk);
+      document.getElementById('metricStock').textContent = angka.format(dashboard.total_stok);
+      document.getElementById('metricProfit').textContent = rupiahTeks(dashboard.total_laba);
+      document.getElementById('metricLow').textContent = angka.format(dashboard.stok_minimum);
+      document.getElementById('metricInventoryValue').textContent = rupiahTeks(dashboard.nilai_persediaan);
+      const lowStock = state.produk.filter((produk) => Number(produk.stok) <= Number(produk.stok_minimum));
+      document.getElementById('lowStockList').innerHTML = lowStock.length
+        ? lowStock.map((produk) => `<div class="alert-row"><div><div class="alert-name">${esc(produk.nama)}${produk.ukuran ? ` · ${esc(produk.ukuran)}` : ''}</div><div class="alert-sku">${esc(produk.sku)} · batas ${angka.format(produk.stok_minimum)} unit</div></div><div class="stock-count">${angka.format(produk.stok)} unit</div></div>`).join('')
+        : '<div class="empty-state">Semua varian berada di atas batas stok minimum.</div>';
+    }
+
+    function renderProducts() {
+      const query = document.getElementById('productSearch').value.trim().toLocaleLowerCase('id-ID');
+      const products = state.produk.filter((produk) => `${produk.nama} ${produk.sku} ${produk.kategori} ${produk.ukuran}`.toLocaleLowerCase('id-ID').includes(query));
+      document.getElementById('productCountLabel').textContent = `${state.produk.length} produk`;
+      document.getElementById('productRows').innerHTML = products.length ? products.map((produk) => {
+        const margin = Number(produk.harga_jual) - Number(produk.hpp);
+        const low = Number(produk.stok) <= Number(produk.stok_minimum);
+        const variant = produk.ukuran || '—';
+        return `<tr>
+          <td><div class="cell-main">${esc(produk.nama)}</div><div class="cell-sub">${esc(produk.sku)}</div></td>
+          <td>${esc(produk.kategori)}</td>
+          <td>${esc(variant)}</td>
+          <td><span class="badge ${low ? 'low' : 'good'}">${angka.format(produk.stok)} unit</span></td>
+          <td>${angka.format(produk.stok_minimum)} unit</td>
+          <td>${rupiahTeks(produk.hpp)}</td><td>${rupiahTeks(produk.harga_jual)}</td>
+          <td>${rupiahTeks(margin)}</td>
+          <td><div class="actions"><button type="button" class="button secondary small" data-edit="${esc(produk.id)}">Edit</button><button type="button" class="button danger small" data-delete="${esc(produk.id)}">Hapus</button></div></td>
+        </tr>`;
+      }).join('') : emptyRow(9, query ? 'Produk tidak ditemukan.' : 'Belum ada produk. Tambahkan produk pertama untuk mulai mencatat stok.');
+    }
+
+    function renderPurchases() {
+      document.getElementById('purchaseRows').innerHTML = state.pembelian.length ? state.pembelian.map((item) => `<tr>
+        <td>${formatTanggal(item.po?.tanggal || item.tanggal)}<div class="cell-sub">${esc(item.po?.nomor_po || 'Pembelian lama')}</div></td>
+        <td><div class="cell-main">${esc(item.produk?.nama || 'Produk dihapus')}</div><div class="cell-sub">${esc(item.produk?.sku || '')}${item.produk?.ukuran ? ` · ${esc(item.produk.ukuran)}` : ''}</div></td>
+        <td>${esc(item.po?.supplier || item.supplier || '—')}</td><td>${angka.format(item.qty)} unit</td>
+        <td>${rupiahTeks(item.harga_satuan)}</td><td>${rupiahTeks(item.biaya_tambahan || 0)}</td><td>${rupiahTeks(item.total)}</td>
+        <td>${item.invoice_url ? `<a class="attachment-link" href="${esc(item.invoice_url)}" target="_blank" rel="noopener">Lihat invoice</a>` : '—'}</td>
+        <td><div class="actions"><button type="button" class="button secondary small" data-edit-purchase="${esc(item.id)}">Edit</button><button type="button" class="button danger small" data-delete-purchase="${esc(item.id)}">Hapus</button></div></td>
+      </tr>`).join('') : emptyRow(9, 'Riwayat pembelian akan muncul di sini.');
+      const suppliers = [...new Set(state.pembelian.map((item) => item.po?.supplier || item.supplier).filter(Boolean))];
+      document.getElementById('supplierSuggestions').innerHTML = suppliers.map((supplier) => `<option value="${esc(supplier)}"></option>`).join('');
+    }
+
+    function renderSales() {
+      document.getElementById('salesRows').innerHTML = state.penjualan.length ? state.penjualan.map((item) => {
+        const profit = Number(item.total) - item.qty * Number(item.hpp_saat_transaksi);
+        return `<tr>
+          <td>${formatTanggal(item.tanggal)}</td>
+          <td><div class="cell-main">${esc(item.produk?.nama || 'Produk dihapus')}</div><div class="cell-sub">${esc(item.produk?.sku || '')}${item.produk?.ukuran ? ` · ${esc(item.produk.ukuran)}` : ''}</div></td>
+          <td>${angka.format(item.qty)} unit</td><td>${rupiahTeks(item.harga_jual)}</td><td>${rupiahTeks(item.diskon || 0)}</td><td>${rupiahTeks(item.total)}</td>
+          <td style="color:${profit < 0 ? 'var(--red)' : 'var(--green)'};font-weight:700">${rupiahTeks(profit)}</td>
+          <td><div class="actions"><button type="button" class="button secondary small" data-edit-sales="${esc(item.id)}">Edit</button><button type="button" class="button danger small" data-delete-sales="${esc(item.id)}">Hapus</button></div></td>
+        </tr>`;
+      }).join('') : emptyRow(8, 'Riwayat penjualan akan muncul di sini.');
+    }
+
+    function renderAdjustments() {
+      document.getElementById('adjustmentRows').innerHTML = state.penyesuaian.length ? state.penyesuaian.map((item) => `<tr>
+        <td>${formatTanggal(item.tanggal)}</td>
+        <td><div class="cell-main">${esc(item.produk?.nama || 'Produk dihapus')}</div><div class="cell-sub">${esc(item.produk?.sku || '')}${item.produk?.ukuran ? ` · ${esc(item.produk.ukuran)}` : ''}</div></td>
+        <td><span class="badge ${item.tipe === 'keluar' ? 'low' : 'good'}">${item.tipe === 'keluar' ? 'Stok keluar' : 'Stok masuk'}</span></td>
+        <td>${angka.format(item.qty)} unit</td><td>${esc(item.alasan)}</td>
+      </tr>`).join('') : emptyRow(5, 'Belum ada penyesuaian stok.');
+    }
+
+    function renderAnalysis() {
+      document.getElementById('analysisRows').innerHTML = state.analisis.length ? state.analisis.map((produk) => `<tr>
+        <td><div class="cell-main">${esc(produk.nama)}</div><div class="cell-sub">${esc(produk.sku)}${produk.ukuran ? ` · ${esc(produk.ukuran)}` : ''}</div></td>
+        <td>${angka.format(produk.stok)} unit</td><td>${rupiahTeks(produk.hpp)}</td><td>${rupiahTeks(produk.harga_jual)}</td>
+        <td>${rupiahTeks(produk.margin)}</td><td>${angka.format(produk.margin_persen)}%</td><td>${rupiahTeks(produk.laba_kotor)}</td>
+      </tr>`).join('') : emptyRow(7, 'Tambahkan produk untuk melihat analisis HPP.');
+      const ranking = [...state.analisis].filter((produk) => Number(produk.laba_kotor) !== 0)
+        .sort((a, b) => Number(b.laba_kotor) - Number(a.laba_kotor)).slice(0, 5);
+      const kontribusiTerbesar = Math.max(0, ...ranking.map((produk) => Math.abs(Number(produk.laba_kotor))));
+      document.getElementById('profitRanking').innerHTML = ranking.length ? ranking.map((produk, index) => {
+        const persen = kontribusiTerbesar > 0 ? Math.max(3, Math.abs(Number(produk.laba_kotor)) / kontribusiTerbesar * 100) : 0;
+        const lossClass = Number(produk.laba_kotor) < 0 ? 'negative' : '';
+        return `<div class="ranking-item"><div class="ranking-label">${index + 1}. ${esc(produk.nama)} <span class="cell-sub">${esc(produk.ukuran || '')}</span></div><div class="ranking-track"><div class="ranking-bar ${lossClass}" style="width:${persen}%"></div></div><div class="ranking-value" style="color:${Number(produk.laba_kotor) < 0 ? 'var(--red)' : 'var(--green)'}">${rupiahTeks(produk.laba_kotor)}</div></div>`;
+      }).join('') : '<div class="empty-state">Belum ada laba kotor positif untuk diranking.</div>';
+    }
+
+    function renderLedger() {
+      const filter = document.getElementById('ledgerProductFilter').value;
+      const rows = (state.ledger || []).filter((item) => !filter || String(item.produk_id) === filter);
+      document.getElementById('ledgerCount').textContent = `${angka.format(rows.length)} pergerakan`;
+      document.getElementById('ledgerRows').innerHTML = rows.length ? rows.map((item) => `<tr>
+        <td>${formatTanggal(item.date)}</td>
+        <td><div class="cell-main">${esc(item.reference)}</div></td>
+        <td><div class="cell-main">${esc(item.product?.nama || 'Produk')}</div><div class="cell-sub">${esc(item.product?.sku || '')}${item.product?.ukuran ? ` · ${esc(item.product.ukuran)}` : ''} · ${esc(item.description)}</div></td>
+        <td>${item.masuk ? `${angka.format(item.masuk)} unit` : '—'}</td><td>${item.keluar ? `${angka.format(item.keluar)} unit` : '—'}</td>
+        <td>${angka.format(item.balance)} unit</td><td>${rupiahTeks(item.hpp)}</td><td>${rupiahTeks(item.stock_value)}</td>
+        <td>${item.invoice_url ? `<a class="attachment-link" href="${esc(item.invoice_url)}" target="_blank" rel="noopener">Lihat invoice</a>` : '—'}</td>
+      </tr>`).join('') : emptyRow(9, state.ledgerError ? 'Kartu stok belum siap. Jalankan schema.sql versi terbaru di Supabase, lalu muat ulang.' : 'Belum ada pergerakan stok untuk filter ini.');
+    }
+
+    function unduhKartuStok() {
+      const filter = document.getElementById('ledgerProductFilter').value;
+      const rows = (state.ledger || []).filter((item) => !filter || String(item.produk_id) === filter);
+      const header = ['Tanggal', 'No Referensi', 'SKU', 'Produk', 'Ukuran', 'Keterangan', 'Masuk', 'Keluar', 'Sisa Stok', 'HPP per Unit', 'Total Nilai Stok', 'Invoice'];
+      const csvValue = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+      const lines = [header, ...rows.map((item) => [
+        item.date,
+        item.reference,
+        item.product?.sku || '',
+        item.product?.nama || '',
+        item.product?.ukuran || '',
+        item.description,
+        item.masuk || 0,
+        item.keluar || 0,
+        item.balance,
+        Number(item.hpp).toFixed(2),
+        Number(item.stock_value).toFixed(2),
+        item.invoice_url || ''
+      ])].map((line) => line.map(csvValue).join(',')).join('\r\n');
+      const blob = new Blob(['\ufeff', lines], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `kartu-stok-${tanggalHariIni()}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function fillProductSelects() {
+      const ledgerFilter = document.getElementById('ledgerProductFilter');
+      const previousLedgerFilter = ledgerFilter.value;
+      ledgerFilter.innerHTML = '<option value="">Semua produk</option>' + state.produk.map((produk) =>
+        `<option value="${esc(produk.id)}">${esc(produk.sku)} · ${esc(produk.nama)}${produk.ukuran ? ` (${esc(produk.ukuran)})` : ''}</option>`
+      ).join('');
+      if (state.produk.some((produk) => String(produk.id) === previousLedgerFilter)) ledgerFilter.value = previousLedgerFilter;
+      for (const selectId of ['salesProduct', 'adjustProduct']) {
+        const select = document.getElementById(selectId);
+        const previous = select.value;
+        select.innerHTML = '<option value="">Pilih produk</option>' + state.produk.map((produk) =>
+          `<option value="${esc(produk.id)}">${esc(produk.sku)} · ${esc(produk.nama)}${produk.ukuran ? ` (${esc(produk.ukuran)})` : ''} (stok ${angka.format(produk.stok)})</option>`
+        ).join('');
+        if (state.produk.some((produk) => String(produk.id) === previous)) select.value = previous;
+        select.disabled = !state.produk.length;
+      }
+      document.querySelectorAll('.purchase-item-product').forEach((select) => {
+        const selected = select.value;
+        select.innerHTML = '<option value="">Pilih produk / ukuran</option>' + state.produk.map((produk) =>
+          `<option value="${esc(produk.id)}">${esc(produk.sku)} · ${esc(produk.nama)}${produk.ukuran ? ` (${esc(produk.ukuran)})` : ''}</option>`
+        ).join('');
+        if (state.produk.some((produk) => String(produk.id) === selected)) select.value = selected;
+        select.disabled = !state.produk.length;
+      });
+      updateSalesProductHint();
+      updateRingkasanPembelian();
+    }
+
+    function setPage(page) {
+      document.querySelectorAll('.page').forEach((section) => { section.hidden = section.id !== `page-${page}`; });
+      document.querySelectorAll('[data-page]').forEach((button) => {
+        if (button.dataset.page === page) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+      });
+    }
+
+    function openProductDialog(produk = null) {
+      const form = document.getElementById('productForm');
+      form.reset();
+      document.getElementById('productId').value = produk?.id || '';
+      document.getElementById('productDialogTitle').textContent = produk ? 'Edit produk' : 'Tambah produk';
+      document.getElementById('productSku').value = produk?.sku || '';
+      document.getElementById('productName').value = produk?.nama || '';
+      document.getElementById('productCategory').value = produk?.kategori || '';
+      document.getElementById('productSize').value = produk?.ukuran || '';
+      document.getElementById('productSellingPrice').value = produk?.harga_jual ?? '';
+      document.getElementById('productMinimumStock').value = produk?.stok_minimum ?? 5;
+      document.getElementById('productDialog').showModal();
+    }
+
+    function openTransactionDialog(type, item) {
+      state.editTransaction = { type, item };
+      const isPurchase = type === 'pembelian';
+      const form = document.getElementById('transactionForm');
+      document.getElementById('transactionDialogTitle').textContent = `Edit ${isPurchase ? 'pembelian' : 'penjualan'}`;
+      document.getElementById('transactionDialogDescription').textContent = `${item.produk?.nama || 'Produk'} · ${item.produk?.sku || ''}`;
+      form.innerHTML = `
+        <div class="form-grid">
+          <div class="field"><label for="transactionDate">Tanggal</label><input id="transactionDate" name="tanggal" type="date" required value="${esc(String(item.tanggal).slice(0, 10))}"></div>
+          <div class="field"><label for="transactionQty">Jumlah unit</label><input id="transactionQty" name="qty" type="number" min="1" step="1" required value="${esc(item.qty)}"></div>
+          <div class="field"><label for="transactionPrice">Harga ${isPurchase ? 'beli' : 'jual'} per unit (Rp)</label><input id="transactionPrice" name="${isPurchase ? 'harga_satuan' : 'harga_jual'}" type="number" min="0" step="0.01" required value="${esc(isPurchase ? item.harga_satuan : item.harga_jual)}"></div>
+          ${isPurchase ? `<div class="field"><label for="transactionExtraCost">Biaya tambahan total (Rp)</label><input id="transactionExtraCost" name="biaya_tambahan" type="number" min="0" step="0.01" required value="${esc(item.biaya_tambahan || 0)}"></div><div class="field"><label for="transactionSupplier">Supplier</label><input id="transactionSupplier" name="supplier" maxlength="120" value="${esc(item.supplier || '')}"></div>` : `<div class="field"><label for="transactionDiscount">Diskon total transaksi (Rp)</label><input id="transactionDiscount" name="diskon" type="number" min="0" step="0.01" required value="${esc(item.diskon || 0)}"></div>`}
+        </div>
+        ${isPurchase ? '<p class="form-note" style="margin-top:14px;margin-bottom:0">Perubahan pembelian akan menyesuaikan stok dan HPP berjalan. Transaksi yang sudah terpakai mungkin tidak bisa dikurangi atau dihapus.</p>' : '<p class="form-note" style="margin-top:14px;margin-bottom:0">Perubahan jumlah akan menyesuaikan stok. HPP saat transaksi tetap seperti saat penjualan pertama dicatat.</p>'}
+        <div class="form-actions"><button type="button" class="button secondary" id="cancelTransactionEdit">Batal</button><button type="submit" class="button warm">Simpan perubahan</button></div>`;
+      form.querySelector('#cancelTransactionEdit').addEventListener('click', () => document.getElementById('transactionDialog').close());
+      document.getElementById('transactionDialog').showModal();
+    }
+
+    function updateSalesProductHint() {
+      const produk = state.produk.find((item) => String(item.id) === document.getElementById('salesProduct').value);
+      document.getElementById('salesStockHint').textContent = produk
+        ? `Stok tersedia: ${angka.format(produk.stok)} unit · HPP ${rupiahTeks(produk.hpp)}`
+        : 'Pilih produk untuk melihat stok';
+      if (produk && !document.getElementById('salesPrice').dataset.touched) {
+        document.getElementById('salesPrice').value = produk.harga_jual;
+      }
+      updateEstimate('sales');
+    }
+
+    function updateEstimate(type) {
+      const qty = Number(document.getElementById('salesQty').value) || 0;
+      const price = Number(document.getElementById('salesPrice').value) || 0;
+      const adjustment = Number(document.getElementById('salesDiscount').value) || 0;
+      document.getElementById('salesTotal').value = rupiahTeks(Math.max(0, qty * price - adjustment));
+    }
+
+    function tambahBarisPembelian(item = {}) {
+      const row = document.createElement('tr');
+      const options = state.produk.map((produk) =>
+        `<option value="${esc(produk.id)}">${esc(produk.sku)} · ${esc(produk.nama)}${produk.ukuran ? ` (${esc(produk.ukuran)})` : ''}</option>`
+      ).join('');
+      row.innerHTML = `<td><select class="purchase-item-product" required><option value="">Pilih produk / ukuran</option>${options}</select></td>
+        <td><input class="purchase-item-qty" type="number" min="1" step="1" required value="${esc(item.qty || 1)}" aria-label="Jumlah unit"></td>
+        <td><input class="purchase-item-price" type="number" min="0" step="0.01" required value="${esc(item.harga_satuan ?? '')}" placeholder="Harga / unit" aria-label="Harga beli per unit"></td>
+        <td class="purchase-item-subtotal">${rupiahTeks(0)}</td>
+        <td><button class="button danger small" type="button" data-remove-purchase-item aria-label="Hapus item">Hapus</button></td>`;
+      if (item.produk_id) row.querySelector('.purchase-item-product').value = String(item.produk_id);
+      document.getElementById('purchaseItemRows').append(row);
+      updateRingkasanPembelian();
+    }
+
+    function updateRingkasanPembelian() {
+      const rows = [...document.querySelectorAll('#purchaseItemRows tr')];
+      let totalQty = 0;
+      let subtotal = 0;
+      for (const row of rows) {
+        const qty = Number(row.querySelector('.purchase-item-qty').value) || 0;
+        const price = Number(row.querySelector('.purchase-item-price').value) || 0;
+        totalQty += qty;
+        subtotal += qty * price;
+        row.querySelector('.purchase-item-subtotal').textContent = rupiahTeks(qty * price);
+      }
+      const biaya = Number(document.getElementById('purchaseExtraCost').value) || 0;
+      const biayaPerUnit = totalQty > 0 ? biaya / totalQty : 0;
+      document.getElementById('purchaseSummary').textContent = `${angka.format(totalQty)} unit · alokasi ongkir ${rupiahTeks(biayaPerUnit)} / unit`;
+      document.getElementById('purchaseTotal').textContent = `Total PO ${rupiahTeks(subtotal + biaya)}`;
+    }
+
+    async function updateNomorPo() {
+      const tanggal = document.getElementById('purchaseDate').value || tanggalHariIni();
+      try {
+        const result = await api(`/api/pembelian-po/nomor?tanggal=${encodeURIComponent(tanggal)}`);
+        document.getElementById('purchaseNumber').value = result.nomor_po;
+      } catch (error) {
+        document.getElementById('purchaseNumber').value = 'Jalankan schema.sql terbaru';
+      }
+    }
+
+    document.querySelectorAll('[data-page]').forEach((button) => button.addEventListener('click', () => setPage(button.dataset.page)));
+    document.querySelectorAll('[data-go]').forEach((button) => button.addEventListener('click', () => setPage(button.dataset.go)));
+    document.querySelector('[data-add-product]').addEventListener('click', () => {
+      setPage('produk');
+      openProductDialog();
+    });
+    document.getElementById('addProductButton').addEventListener('click', () => openProductDialog());
+    document.getElementById('closeProductDialog').addEventListener('click', () => document.getElementById('productDialog').close());
+    document.getElementById('cancelProductDialog').addEventListener('click', () => document.getElementById('productDialog').close());
+    document.getElementById('closeTransactionDialog').addEventListener('click', () => document.getElementById('transactionDialog').close());
+    document.getElementById('productDialog').addEventListener('click', (event) => {
+      if (event.target === event.currentTarget) event.currentTarget.close();
+    });
+    document.getElementById('productSearch').addEventListener('input', renderProducts);
+    document.getElementById('salesProduct').addEventListener('change', () => {
+      document.getElementById('salesPrice').dataset.touched = '';
+      updateSalesProductHint();
+    });
+    document.getElementById('salesPrice').addEventListener('input', (event) => {
+      event.currentTarget.dataset.touched = 'true';
+      updateEstimate('sales');
+    });
+    document.getElementById('purchaseExtraCost').addEventListener('input', updateRingkasanPembelian);
+    document.getElementById('purchaseDate').addEventListener('change', updateNomorPo);
+    document.getElementById('addPurchaseItem').addEventListener('click', () => tambahBarisPembelian());
+    document.getElementById('purchaseItemRows').addEventListener('input', updateRingkasanPembelian);
+    document.getElementById('purchaseItemRows').addEventListener('change', updateRingkasanPembelian);
+    document.getElementById('purchaseItemRows').addEventListener('click', (event) => {
+      if (!event.target.closest('[data-remove-purchase-item]')) return;
+      const rows = document.querySelectorAll('#purchaseItemRows tr');
+      if (rows.length === 1) {
+        const row = rows[0];
+        row.querySelector('.purchase-item-product').value = '';
+        row.querySelector('.purchase-item-qty').value = 1;
+        row.querySelector('.purchase-item-price').value = '';
+      } else event.target.closest('tr').remove();
+      updateRingkasanPembelian();
+    });
+    document.getElementById('ledgerProductFilter').addEventListener('change', renderLedger);
+    document.getElementById('exportLedger').addEventListener('click', unduhKartuStok);
+    document.getElementById('salesQty').addEventListener('input', () => updateEstimate('sales'));
+    document.getElementById('salesDiscount').addEventListener('input', () => updateEstimate('sales'));
+
+    document.getElementById('productRows').addEventListener('click', async (event) => {
+      const editId = event.target.closest('[data-edit]')?.dataset.edit;
+      const deleteId = event.target.closest('[data-delete]')?.dataset.delete;
+      if (editId) {
+        const produk = state.produk.find((item) => String(item.id) === editId);
+        if (produk) openProductDialog(produk);
+      }
+      if (deleteId) {
+        const produk = state.produk.find((item) => String(item.id) === deleteId);
+        if (!produk || !confirm(`Hapus produk “${produk.nama}”? Produk dengan riwayat transaksi tidak dapat dihapus.`)) return;
+        try {
+          await api(`/api/produk/${encodeURIComponent(deleteId)}`, { method: 'DELETE' });
+          notify('Produk berhasil dihapus.');
+          await loadData();
+        } catch (error) { notify(error.message, true); }
+      }
+    });
+
+    document.getElementById('purchaseRows').addEventListener('click', async (event) => {
+      const editId = event.target.closest('[data-edit-purchase]')?.dataset.editPurchase;
+      const deleteId = event.target.closest('[data-delete-purchase]')?.dataset.deletePurchase;
+      if (editId) {
+        const item = state.pembelian.find((row) => String(row.id) === editId);
+        if (item) openTransactionDialog('pembelian', item);
+      }
+      if (deleteId) {
+        const item = state.pembelian.find((row) => String(row.id) === deleteId);
+        if (!item || !confirm(`Hapus pembelian ${item.produk?.nama || ''} sebanyak ${item.qty} unit? Stok dan HPP akan disesuaikan.`)) return;
+        try {
+          await api(`/api/pembelian/${encodeURIComponent(deleteId)}`, { method: 'DELETE' });
+          notify('Pembelian berhasil dihapus dan persediaan disesuaikan.');
+          await loadData();
+        } catch (error) { notify(error.message, true); }
+      }
+    });
+
+    document.getElementById('salesRows').addEventListener('click', async (event) => {
+      const editId = event.target.closest('[data-edit-sales]')?.dataset.editSales;
+      const deleteId = event.target.closest('[data-delete-sales]')?.dataset.deleteSales;
+      if (editId) {
+        const item = state.penjualan.find((row) => String(row.id) === editId);
+        if (item) openTransactionDialog('penjualan', item);
+      }
+      if (deleteId) {
+        const item = state.penjualan.find((row) => String(row.id) === deleteId);
+        if (!item || !confirm(`Hapus penjualan ${item.produk?.nama || ''} sebanyak ${item.qty} unit? Stok akan dikembalikan.`)) return;
+        try {
+          await api(`/api/penjualan/${encodeURIComponent(deleteId)}`, { method: 'DELETE' });
+          notify('Penjualan berhasil dihapus dan stok dikembalikan.');
+          await loadData();
+        } catch (error) { notify(error.message, true); }
+      }
+    });
+
+    document.getElementById('transactionForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const transaction = state.editTransaction;
+      if (!transaction) return;
+      const body = Object.fromEntries(new FormData(form));
+      body.qty = Number(body.qty);
+      const isPurchase = transaction.type === 'pembelian';
+      if (isPurchase) {
+        body.harga_satuan = Number(body.harga_satuan);
+        body.biaya_tambahan = Number(body.biaya_tambahan);
+      } else {
+        body.harga_jual = Number(body.harga_jual);
+        body.diskon = Number(body.diskon);
+      }
+      try {
+        await api(`/api/${transaction.type}/${encodeURIComponent(transaction.item.id)}`, {
+          method: 'PUT', body: JSON.stringify(body)
+        });
+        document.getElementById('transactionDialog').close();
+        notify(`${isPurchase ? 'Pembelian' : 'Penjualan'} berhasil diperbarui.`);
+        state.editTransaction = null;
+        await loadData();
+      } catch (error) { notify(error.message, true); }
+    });
+
+    document.getElementById('productForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+      const id = formData.get('id');
+      const body = Object.fromEntries(['sku', 'nama', 'kategori', 'ukuran', 'stok_minimum', 'harga_jual'].map((key) => [key, formData.get(key)]));
+      body.harga_jual = Number(body.harga_jual);
+      body.stok_minimum = Number(body.stok_minimum);
+      try {
+        await api(id ? `/api/produk/${encodeURIComponent(id)}` : '/api/produk', {
+          method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
+        });
+        document.getElementById('productDialog').close();
+        notify(id ? 'Produk berhasil diperbarui.' : 'Produk berhasil ditambahkan.');
+        await loadData();
+      } catch (error) { notify(error.message, true); }
+    });
+
+    document.getElementById('purchaseForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const body = {
+        supplier: formData.get('supplier'),
+        tanggal: formData.get('tanggal'),
+        biaya_tambahan: Number(formData.get('biaya_tambahan') || 0),
+        items: [...document.querySelectorAll('#purchaseItemRows tr')].map((row) => ({
+          produk_id: row.querySelector('.purchase-item-product').value,
+          qty: Number(row.querySelector('.purchase-item-qty').value),
+          harga_satuan: Number(row.querySelector('.purchase-item-price').value)
+        }))
+      };
+      try {
+        const invoiceFile = document.getElementById('purchaseInvoice').files[0] || null;
+        const result = await api('/api/pembelian-po', { method: 'POST', body: JSON.stringify(body), file: invoiceFile });
+        form.reset();
+        document.getElementById('purchaseDate').value = tanggalHariIni();
+        document.getElementById('purchaseExtraCost').value = '0';
+        document.getElementById('purchaseInvoice').value = '';
+        document.getElementById('purchaseItemRows').innerHTML = '';
+        tambahBarisPembelian();
+        await updateNomorPo();
+        notify(`PO ${result.nomor_po} tersimpan: ${angka.format(result.total_qty)} unit, biaya tambahan dialokasikan berdasarkan qty.`);
+        await loadData();
+      } catch (error) { notify(error.message, true); }
+    });
+
+    document.getElementById('salesForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const body = Object.fromEntries(new FormData(form));
+      body.qty = Number(body.qty);
+      body.harga_jual = Number(body.harga_jual);
+      body.diskon = Number(body.diskon || 0);
+      try {
+        await api('/api/penjualan', { method: 'POST', body: JSON.stringify(body) });
+        form.reset();
+        document.getElementById('salesDate').value = tanggalHariIni();
+        document.getElementById('salesPrice').dataset.touched = '';
+        updateSalesProductHint();
+        notify('Penjualan tersimpan dan stok telah diperbarui.');
+        await loadData();
+      } catch (error) { notify(error.message, true); }
+    });
+
+    document.getElementById('adjustmentForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const body = Object.fromEntries(new FormData(form));
+      body.qty = Number(body.qty);
+      try {
+        await api('/api/penyesuaian-stok', { method: 'POST', body: JSON.stringify(body) });
+        form.reset();
+        document.getElementById('adjustDate').value = tanggalHariIni();
+        notify('Penyesuaian stok berhasil disimpan.');
+        await loadData();
+      } catch (error) { notify(error.message, true); }
+    });
+
+    document.getElementById('todayLabel').textContent = new Intl.DateTimeFormat('id-ID', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    }).format(new Date());
+    document.getElementById('purchaseDate').value = tanggalHariIni();
+    document.getElementById('salesDate').value = tanggalHariIni();
+    document.getElementById('adjustDate').value = tanggalHariIni();
+    tambahBarisPembelian();
+    updateNomorPo();
+    loadData();
+  </script>
+</body>
+</html>
